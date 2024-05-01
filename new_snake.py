@@ -56,38 +56,36 @@ class Head(Turtle):
         self.color('dark red')
         self.shape("square")
         self.direction = 0
-        self.velocity = 5
+        self.velocity = 20
         self.goto(-175,0)
         self.st()
         self.score = 0
         self.screen = screen
+        self.speed(1)
         self.screen.onkey(self.north, "Up")
         self.screen.onkey(self.south, "Down")
         self.screen.onkey(self.west, "Left")
         self.screen.onkey(self.east, "Right")
 
-    def move(self, catepillar,obstacles):
-        if self.check_for_death(caterpillar,obstacles):
-            self.die(caterpillar)
+    def move(self, snake):
+        if self.check_for_death(snake):
+            self.die(snake)
         self.speed(0)
         self.setheading(self.direction)
+        self.speed(1)
         # self.speed(self.velocity)
         self.forward(self.velocity)
         
-
     def die(self, caterpillar):
         for j in range(len(caterpillar)-1,-1,-1):
             caterpillar[j].ht()
             caterpillar.pop(j)
 
-    def check_for_death(self,caterpillar, obstacles):
+    def check_for_death(self,snake):
         if self.xcor()>190 or self.xcor()<-190 or self.ycor()<-190 or self.ycor()>190:
             return True
-        for i in range(7, len(caterpillar)):
-            if self.distance(caterpillar[i])<15:
-                return True
-        for obj in obstacles:
-            if self.distance(obj)<25:
+        for i in range(7, len(snake)):
+            if self.distance(snake[i])<15:
                 return True
         return False
         
@@ -141,14 +139,32 @@ class Obstacle(Turtle):
         self.ht()
         self.pu()
         self.index = 0
-        self.costumes = ["large.gif","small.gif"]
-        self.shape(self.costumes[self.index])
+        self.shape("square")
         self.goto(r(-180,180),r(-180,180))
         self.st()
 
-    def flash(self):
-        self.index = (self.index+1)%2
-        self.shape(self.costumes[self.index])
+def update():
+    global speed
+    if play:
+        if len(snake)>0:
+            snake[0].move(snake)
+            if snake[0].distance(apple)<20:
+                    apple.move()
+                    snake[0].score += 1
+                    score.display(snake[0].score)
+                    snake[0].velocity += 1
+                    if snake[0].velocity % 10 == 0:
+                        speed += 0.2
+                        screen.tracer(speed)
+                    snake.append(Segment("orange"))
+                    snake.append(Segment("red"))
+                    if len(snake)%10==0:
+                        snake[0].velocity +=1
+            for i in range(len(snake)-1, 0, -1):
+                snake[i].goto(snake[i-1].xcor(), snake[i-1].ycor())
+        else:
+            score.game_over()
+    screen.ontimer(update,50)
 
 def start():
     global play
@@ -158,10 +174,8 @@ SCREEN
 """
 screen = Screen()
 screen.bgcolor("black")
-screen.tracer(2)
+screen.tracer(0)
 screen.register_shape('apple.gif')
-screen.register_shape('small.gif')
-screen.register_shape('large.gif')
 screen.listen()
 screen.onkey(start,"space")
 checkerboard()
@@ -173,35 +187,16 @@ play = False
 TURTLE AND OBJECT INSTANTIATION
 """
 apple = Apple()
-obstacles=[]
-
-caterpillar = [Head(screen)]
-score.display(caterpillar[0].score)
+snake = [Head(screen)]
+obstacles = [Obstacle(),Obstacle(),Obstacle()]
+score.display(snake[0].score)
 """
 GAME LOOP
 """
-speed_count = 0
-while len(caterpillar)>0:
-    if play: 
-        if caterpillar[0].distance(apple)<20:
-            apple.move()
-            obstacles.append(Obstacle())
-            caterpillar[0].score += 1
-            score.display(caterpillar[0].score)
-            caterpillar[0].velocity += 1
-            if caterpillar[0].velocity % 2 == 0:
-                speed += 0.2
-                screen.tracer(speed)
-            caterpillar.append(Segment("orange"))
-            caterpillar.append(Segment("red"))
-            if len(caterpillar)%6==0:
-                caterpillar[0].velocity +=1
-        for i in range(len(caterpillar)-1, 0, -1):
-            caterpillar[i].goto(caterpillar[i-1].xcor(), caterpillar[i-1].ycor())
-        caterpillar[0].move(caterpillar,obstacles)
-        for obj in obstacles:
-            obj.flash()
-    caterpillar[0].hideturtle()
-    caterpillar[0].showturtle()
+speed = 2
+update()
 
-score.game_over()
+screen.mainloop()      
+    
+
+
